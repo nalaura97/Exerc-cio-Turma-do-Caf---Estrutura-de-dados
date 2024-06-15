@@ -1,0 +1,242 @@
+#include <iostream>
+#include <stdio.h>
+#include <string>
+
+struct Participante {
+    int id;
+    std::string nome;
+    int semestre;
+    int anoIngresso;
+    std::string curso; // "DSM", "SI" ou "GE"
+};
+
+struct Contribuicao {
+    int idParticipante;
+    int mes;
+    int ano;
+    double valor;
+};
+
+Participante* participantes = nullptr;
+int numParticipantes = 0;
+
+Contribuicao* contribuicoes = nullptr;
+int numContribuicoes = 0;
+
+void mostrarMenu() {
+    std::cout << "1. Inserir Participante\n";
+    std::cout << "2. Editar Participante\n";
+    std::cout << "3. Carregar Participantes de Arquivo\n";
+    std::cout << "4. Salvar Participantes em Arquivo\n";
+    std::cout << "5. Cadastrar Contribuicao\n";
+    std::cout << "6. Salvar Contribuicoes em Arquivo\n";
+    std::cout << "7. Salvar Contribuicoes por Curso\n";
+    std::cout << "8. Sair\n";
+    std::cout << "Escolha uma opcao: ";
+}
+
+void inserirParticipante() {
+    Participante* novoArray = new Participante[numParticipantes + 1];
+    for (int i = 0; i < numParticipantes; i++) {
+        novoArray[i] = participantes[i];
+    }
+    delete[] participantes;
+    participantes = novoArray;
+
+    Participante& p = participantes[numParticipantes];
+    p.id = numParticipantes + 1; // Atribuir ID automaticamente
+
+    std::cout << "Nome: ";
+    std::cin >> p.nome;
+    std::cout << "Semestre: ";
+    std::cin >> p.semestre;
+    std::cout << "Ano de Ingresso: ";
+    std::cin >> p.anoIngresso;
+    std::cout << "Curso (DSM/SI/GE): ";
+    std::cin >> p.curso;
+
+    numParticipantes++;
+}
+
+void editarParticipante() {
+    int id;
+    std::cout << "ID do Participante: ";
+    std::cin >> id;
+
+    for (int i = 0; i < numParticipantes; i++) {
+        if (participantes[i].id == id) {
+            std::cout << "Nome: ";
+            std::cin >> participantes[i].nome;
+            std::cout << "Semestre: ";
+            std::cin >> participantes[i].semestre;
+            std::cout << "Ano de Ingresso: ";
+            std::cin >> participantes[i].anoIngresso;
+            std::cout << "Curso (DSM/SI/GE): ";
+            std::cin >> participantes[i].curso;
+            return;
+        }
+    }
+    std::cout << "Participante não encontrado.\n";
+}
+
+void carregarParticipantes() {
+    FILE* file = fopen("participantes.txt", "r");
+    if (!file) {
+        std::cout << "Erro ao abrir o arquivo.\n";
+        return;
+    }
+
+    Participante temp;
+    while (fscanf(file, "%d %s %d %d %s", &temp.id, temp.nome.c_str(), &temp.semestre, &temp.anoIngresso, temp.curso.c_str()) != EOF) {
+        Participante* novoArray = new Participante[numParticipantes + 1];
+        for (int i = 0; i < numParticipantes; i++) {
+            novoArray[i] = participantes[i];
+        }
+        delete[] participantes;
+        participantes = novoArray;
+
+        participantes[numParticipantes] = temp;
+        numParticipantes++;
+    }
+    fclose(file);
+}
+
+void salvarParticipantes() {
+    FILE* file = fopen("participantes.txt", "w");
+    if (!file) {
+        std::cout << "Erro ao abrir o arquivo.\n";
+        return;
+    }
+
+    for (int i = 0; i < numParticipantes; i++) {
+        fprintf(file, "%d %s %d %d %s\n", participantes[i].id, participantes[i].nome.c_str(), participantes[i].semestre, participantes[i].anoIngresso, participantes[i].curso.c_str());
+    }
+    fclose(file);
+}
+
+void cadastrarContribuicao() {
+    int id;
+    std::cout << "ID do Participante: ";
+    std::cin >> id;
+
+    bool participanteExiste = false;
+    for (int i = 0; i < numParticipantes; i++) {
+        if (participantes[i].id == id) {
+            participanteExiste = true;
+            break;
+        }
+    }
+
+    if (!participanteExiste) {
+        std::cout << "Participante nao encontrado.\n";
+        return;
+    }
+
+    Contribuicao* novoArray = new Contribuicao[numContribuicoes + 1];
+    for (int i = 0; i < numContribuicoes; i++) {
+        novoArray[i] = contribuicoes[i];
+    }
+    delete[] contribuicoes;
+    contribuicoes = novoArray;
+
+    Contribuicao& c = contribuicoes[numContribuicoes];
+    c.idParticipante = id;
+    std::cout << "Mes: ";
+    std::cin >> c.mes;
+    std::cout << "Ano: ";
+    std::cin >> c.ano;
+    std::cout << "Valor: ";
+    std::cin >> c.valor;
+
+    numContribuicoes++;
+}
+
+void salvarContribuicoes() {
+    FILE* file = fopen("contribuintes.txt", "w");
+    if (!file) {
+        std::cout << "Erro ao abrir o arquivo.\n";
+        return;
+    }
+
+    for (int i = 0; i < numContribuicoes; i++) {
+        fprintf(file, "%d %d %d %lf\n", contribuicoes[i].idParticipante, contribuicoes[i].mes, contribuicoes[i].ano, contribuicoes[i].valor);
+    }
+    fclose(file);
+}
+
+void salvarContribuicoesPorCurso() {
+    FILE* dsmFile = fopen("contribuintes_DSM.txt", "w");
+    FILE* siFile = fopen("contribuintes_SI.txt", "w");
+    FILE* geFile = fopen("contribuintes_GE.txt", "w");
+
+    if (!dsmFile || !siFile || !geFile) {
+        std::cout << "Erro ao abrir um dos arquivos.\n";
+        if (dsmFile) fclose(dsmFile);
+        if (siFile) fclose(siFile);
+        if (geFile) fclose(geFile);
+        return;
+    }
+
+    for (int i = 0; i < numContribuicoes; i++) {
+        for (int j = 0; j < numParticipantes; j++) {
+            if (participantes[j].id == contribuicoes[i].idParticipante) {
+                FILE* file;
+                if (participantes[j].curso == "DSM") {
+                    file = dsmFile;
+                } else if (participantes[j].curso == "SI") {
+                    file = siFile;
+                } else if (participantes[j].curso == "GE") {
+                    file = geFile;
+                }
+                fprintf(file, "%d %d %d %lf\n", contribuicoes[i].idParticipante, contribuicoes[i].mes, contribuicoes[i].ano, contribuicoes[i].valor);
+            }
+        }
+    }
+
+    fclose(dsmFile);
+    fclose(siFile);
+    fclose(geFile);
+}
+
+int main() {
+    int opcao;
+    do {
+        mostrarMenu();
+        std::cin >> opcao;
+
+        switch(opcao) {
+            case 1:
+                inserirParticipante();
+                break;
+            case 2:
+                editarParticipante();
+                break;
+            case 3:
+                carregarParticipantes();
+                break;
+            case 4:
+                salvarParticipantes();
+                break;
+            case 5:
+                cadastrarContribuicao();
+                break;
+            case 6:
+                salvarContribuicoes();
+                break;
+            case 7:
+                salvarContribuicoesPorCurso();
+                break;
+            case 8:
+                std::cout << "Saindo...\n";
+                break;
+            default:
+                std::cout << "Opcao invalida. Tente novamente.\n";
+                break;
+        }
+    } while(opcao != 8);
+
+    delete[] participantes;
+    delete[] contribuicoes;
+
+    return 0;
+}
